@@ -54,7 +54,7 @@ def fetch_and_save_transcript(ticker: str, year: int, quarter: int) -> str:
         f.write(text)
     return filepath
 
-def fetch_and_save_last_n_transcripts(ticker: str = "NVDA", n: int = 4) -> dict:
+def fetch_and_save_last_n_transcripts(ticker: str , n: int = 4) -> dict:
     """
     Fetches & saves the last n quarters’ transcripts for `ticker`.
     Returns a dict mapping "YYYYQ#" → filepath or error string.
