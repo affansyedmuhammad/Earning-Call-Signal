@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pathlib import Path
 from typing import Dict, Any, List
+from fastapi.middleware.cors import CORSMiddleware
 import os
 import glob
 import json
@@ -16,6 +17,19 @@ app = FastAPI(
     description="Fetch & analyze NVIDIA earnings call transcripts",
     version="0.1.0"
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost",        # React dev server
+        "http://127.0.0.1",        # sometimes the same
+        # or simply "*" for _all_ origins (dev only!)
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
 
 @app.get("/")
