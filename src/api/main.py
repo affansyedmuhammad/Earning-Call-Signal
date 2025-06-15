@@ -1,12 +1,8 @@
 from fastapi import FastAPI, HTTPException
-from transcript.transcript_client import fetch_and_save_last_n_transcripts
-# from analysis.sentiment import analyze_all_transcripts
-# from analysis.signals import extract_all_signals
-# from analysis.llm_analysis import extract_all_llm_analyses
-
-# from analysis.full_llm_analysis import analyze_full_transcript
-# from analysis.chain_llm_analysis import analyze_full_long
 from pathlib import Path
+
+from transcript.transcript_client import fetch_and_save_last_n_transcripts
+from transcript.transcript_loader import load_json_transcripts
 
 app = FastAPI(
     title="Earnings Call Analyzer",
@@ -18,7 +14,7 @@ app = FastAPI(
 async def read_root():
     return {"message": "Welcome to your Earnings Call Analyzer!"}
 
-@app.get("/transcripts/{ticker}", summary="Get last 4 transcripts")
+@app.get("/saveTranscripts/{ticker}", summary="Get last 4 transcripts")
 async def get_nvidia_transcripts(ticker: str):
     """
     Fetches the last 4 quarters transcripts for NVDA via API Ninjas,
@@ -30,6 +26,14 @@ async def get_nvidia_transcripts(ticker: str):
     except Exception as e:
         # fallback for any unexpected error
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/getTranscripts/{ticker}")
+async def get_transcripts(ticker: str):
+    data = load_json_transcripts(ticker.upper())
+    if not data:
+        raise HTTPException(404, "No transcripts found")
+    return data
+
 
 # @app.get("/sentiment/{ticker}", summary="Analyze transcript sentiments")
 # async def sentiment_report(ticker: str):

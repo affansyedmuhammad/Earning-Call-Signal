@@ -2,6 +2,7 @@ import os
 import requests
 import json
 import re
+from typing import List, Dict
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -46,37 +47,60 @@ def fetch_transcript(ticker: str, year: int, quarter: int) -> str:
 
 def process_transcript(text: str) -> str:
     """
-    Process the raw transcript text into a format suitable for analysis.
+    Parse the JSON‑encoded transcript string and return a JSON string:
+    {
+      "date": "...",
+      "preparedRemarks": [ {speaker, text}, … ],
+      "qanda":         [ {speaker, text}, … ]
+    }
     """
+    # 1. Load JSON
     data = json.loads(text)
-    # Extract the transcript text
-    transcript = data['transcript']
+    date = data.get("date", "")
+    transcript = data["transcript"]
 
-    # Split the transcript by newline characters
-    lines = transcript.split('\n')
+    # 2. Split into raw lines and extract Speaker/Text pairs
+    entries: List[Dict[str,str]] = []
+    for line in transcript.split("\n"):
+        for speaker, body in re.findall(r'([^:\n]+):\s*(.+)', line):
+            entries.append({
+                "speaker": speaker.strip(),
+                "text":    body.strip()
+            })
 
-    # Process each line to separate speakers
-    processed_lines = []
-    for line in lines:
-        # Use regex to find all instances of "Speaker: Text"
-        matches = re.findall(r'([^:\n]+):\s*([^:\n]+(?:\s*[^:\n]+)*)', line)
-        
-        for i, (speaker, text) in enumerate(matches):
-            # For the first match in a line, we might need to handle text before the first speaker
-            if i == 0 and not line.startswith(speaker + ':'):
-                prefix = line[:line.find(speaker + ':')].strip()
-                if prefix:
-                    # If there's text before the first speaker, add it to the previous speaker's text
-                    if processed_lines:
-                        processed_lines[-1] += ' ' + prefix
-                    else:
-                        # If this is the first line, create a new entry
-                        processed_lines.append(f"Unknown : {prefix}")
-            
-            # Add the speaker and their text
-            processed_lines.append(f"{speaker} : {text.strip()}")
+    # 3. Partition into Prepared Remarks vs Q&A
+    prepared: List[Dict[str,str]] = []
+    qanda:    List[Dict[str,str]] = []
 
-    return '\n'.join(processed_lines)
+    in_qa = False
+
+    for entry in entries:
+        spk = entry["speaker"]
+        txt = entry["text"]
+
+        # Detect start of Q&A
+        if not in_qa:
+            # Detect start of Q&A
+            if spk == "Operator" and (
+               "[operator instructions]" in txt.lower() and "your first question" in txt.lower()
+            ):
+                in_qa = True
+                # continue
+
+        if not in_qa:
+            prepared.append(entry)
+        else:
+            # Collect Q&A entries
+            qanda.append(entry)
+
+    # 4. Serialize to JSON with double‑quotes
+    output = {
+        "date": date,
+        "preparedRemarks": prepared,
+        "qanda": qanda
+    }
+    return json.dumps(output, ensure_ascii=False)
+
 
 def fetch_and_save_transcript(ticker: str, year: int, quarter: int) -> str:
     """
