@@ -50,7 +50,11 @@
         "negative_avg": 0
       },
       "strategic_focuses": [
-        
+        "Data Center",
+        "AI Factories",
+        "Sovereign AI",
+        "Automotive",
+        "Omniverse"
       ]
     },
     "2025Q2": {
