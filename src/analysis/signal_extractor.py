@@ -129,8 +129,18 @@ def extract_all_signals(transcripts: Dict[str, Any]) -> Dict[str, Any]:
         "qoq_tone_change": { ... deltas ... }
       }
     """
+    # Sort quarters chronologically to ensure consistent processing order
+    # This is important for our TF-IDF-like approach that compares with previous quarters
+    def sort_key(q: str):
+        year, qnum = q.split('Q')
+        return (int(year), int(qnum))
+    
+    sorted_quarters = sorted(transcripts.keys(), key=sort_key)
+    
     signals: Dict[str, Any] = {}
-    for quarter, transcript in transcripts.items():
+    # Process quarters in chronological order
+    for quarter in sorted_quarters:
+        transcript = transcripts[quarter]
         signals[quarter] = extract_nlp_signals(transcript)
 
     qoq_changes = compute_qoq_tone(signals)

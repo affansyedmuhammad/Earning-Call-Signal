@@ -82,19 +82,25 @@ def extract_ngrams(tokens: List[str], n: int) -> List[str]:
         ngrams.append(ngram)
     return ngrams
 
+# Global variable to store transcript text from previous quarters for comparison
+_previous_transcripts_text = []
+
 def extract_strategic_focuses(entries: List[Dict[str, str]], top_n: int = 5) -> List[str]:
     """
     Extract strategic focuses from a list of transcript entries.
     Returns a list of the top N strategic areas mentioned.
+    Uses a TF-IDF-like approach to emphasize terms unique to this transcript.
     """
+    global _previous_transcripts_text
+    
     # Filter out entries where speaker is "Operator"
     filtered_entries = [e for e in entries if e.get("speaker", "").lower() != "operator"]
     
     # Combine all text
-    all_text = " ".join([e["text"] for e in filtered_entries])
+    current_text = " ".join([e["text"] for e in filtered_entries])
     
     # Preprocess text
-    tokens = preprocess_text(all_text)
+    tokens = preprocess_text(current_text)
     
     # Extract unigrams, bigrams, and trigrams
     unigrams = tokens
@@ -104,25 +110,43 @@ def extract_strategic_focuses(entries: List[Dict[str, str]], top_n: int = 5) -> 
     # Combine all n-grams
     all_ngrams = unigrams + bigrams + trigrams
     
-    # Count occurrences of strategic area keywords
+    # Count occurrences of strategic area keywords in current transcript
     area_counts = {}
+    area_uniqueness = {}
+    
     for area, keywords in NVIDIA_STRATEGIC_AREAS.items():
         count = 0
         for keyword in keywords:
             # Count exact matches of keywords in n-grams
-            count += sum(1 for ngram in all_ngrams if keyword in ngram)
+            keyword_count = sum(1 for ngram in all_ngrams if keyword in ngram)
+            count += keyword_count
+            
+            # Calculate uniqueness score (similar to TF-IDF)
+            # Higher score for terms that appear more in current transcript
+            # and less in previous transcripts
+            uniqueness = keyword_count
+            for prev_text in _previous_transcripts_text:
+                # If this keyword appears frequently in previous transcripts,
+                # reduce its uniqueness score
+                if keyword in prev_text.lower():
+                    uniqueness *= 0.7  # Reduce weight for terms common across quarters
+            
+            if uniqueness > 0:
+                if area not in area_uniqueness:
+                    area_uniqueness[area] = 0
+                area_uniqueness[area] += uniqueness
+        
         if count > 0:
             area_counts[area] = count
     
     # Add frequency analysis for unique terms in this transcript
-    # This will help differentiate strategic focuses between quarters
     freq_dist = FreqDist(bigrams + trigrams)
-    common_phrases = freq_dist.most_common(20)  # Get top 20 most common phrases
+    common_phrases = freq_dist.most_common(30)  # Get top 30 most common phrases
     
     # Add any frequent phrases that aren't already in our strategic areas
     for phrase, count in common_phrases:
         # Check if this phrase is not already covered by existing strategic areas
-        if count > 3:  # Only consider phrases that appear more than 3 times
+        if count > 2:  # Lower threshold to capture more unique phrases
             is_new = True
             for area_keywords in NVIDIA_STRATEGIC_AREAS.values():
                 if any(keyword in phrase for keyword in area_keywords):
@@ -130,12 +154,30 @@ def extract_strategic_focuses(entries: List[Dict[str, str]], top_n: int = 5) -> 
                     break
             
             if is_new:
-                # Capitalize first letter of each word for consistency
-                new_area = ' '.join(word.capitalize() for word in phrase.split())
-                area_counts[new_area] = count
+                # Calculate uniqueness for this phrase
+                uniqueness = count
+                for prev_text in _previous_transcripts_text:
+                    if phrase in prev_text.lower():
+                        uniqueness *= 0.5  # Heavily penalize phrases that appear in previous transcripts
+                
+                if uniqueness > 1:  # Only add if it's somewhat unique
+                    # Capitalize first letter of each word for consistency
+                    new_area = ' '.join(word.capitalize() for word in phrase.split())
+                    area_counts[new_area] = count
+                    area_uniqueness[new_area] = uniqueness
     
-    # Sort by frequency and return top N
-    sorted_areas = sorted(area_counts.items(), key=lambda x: x[1], reverse=True)
+    # Store current transcript for future comparisons
+    _previous_transcripts_text.append(current_text)
+    # Keep only the last 3 transcripts to avoid excessive memory usage
+    if len(_previous_transcripts_text) > 3:
+        _previous_transcripts_text.pop(0)
+    
+    # Sort by uniqueness score (not just frequency) to prioritize quarter-specific topics
+    if area_uniqueness:
+        sorted_areas = sorted(area_uniqueness.items(), key=lambda x: x[1], reverse=True)
+    else:
+        sorted_areas = sorted(area_counts.items(), key=lambda x: x[1], reverse=True)
+    
     return [area for area, _ in sorted_areas[:top_n]]
 
 def extract_strategic_focuses_llm(text: str, client) -> List[str]:
