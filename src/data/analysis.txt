@@ -1,0 +1,94 @@
+{
+  "signals": {
+    "2024Q3": {
+      "management_sentiment": {
+        "positive_avg": 0.5,
+        "neutral_avg": 0.5,
+        "negative_avg": 0
+      },
+      "qa_sentiment": {
+        "positive_avg": 0.578947368421053,
+        "neutral_avg": 0.368421052631579,
+        "negative_avg": 0.0526315789473684
+      },
+      "strategic_focuses": [
+        "Data Center Growth",
+        "Export Control",
+        "Expand Sovereign AI Infrastructure",
+        "Broaden Networking Portfolio",
+        "Grow Software & Services Ecosystem"
+      ]
+    },
+    "2024Q4": {
+      "management_sentiment": {
+        "positive_avg": 0.5,
+        "neutral_avg": 0.5,
+        "negative_avg": 0
+      },
+      "qa_sentiment": {
+        "positive_avg": 0.5,
+        "neutral_avg": 0.409090909090909,
+        "negative_avg": 0.0909090909090909
+      },
+      "strategic_focuses": [
+        "Data Center Growth",
+        "Sovereign Clouds",
+        "Networking",
+        "GPU Platforms",
+        "Strengthen Full‑Stack Ecosystem"
+      ]
+    },
+    "2025Q1": {
+      "management_sentiment": {
+        "positive_avg": 0.5,
+        "neutral_avg": 0.5,
+        "negative_avg": 0
+      },
+      "qa_sentiment": {
+        "positive_avg": 0.576923076923077,
+        "neutral_avg": 0.423076923076923,
+        "negative_avg": 0
+      },
+      "strategic_focuses": [
+        "Data Center",
+        "AI Factories",
+        "Sovereign AI",
+        "Automotive",
+        "Omniverse"
+      ]
+    },
+    "2025Q2": {
+      "management_sentiment": {
+        "positive_avg": 0.5,
+        "neutral_avg": 0.5,
+        "negative_avg": 0
+      },
+      "qa_sentiment": {
+        "positive_avg": 0.7,
+        "neutral_avg": 0.25,
+        "negative_avg": 0.05
+      },
+      "strategic_focuses": [
+        "Data Center",
+        "Ethernet",
+        "Sovereign AI",
+        "Enterprise AI",
+        "Diversification"
+      ]
+    }
+  },
+  "qoq_tone_change": {
+    "2024Q3_to_2024Q4": {
+      "management_tone_shift": 0,
+      "qa_tone_shift": -0.0789473684210527
+    },
+    "2024Q4_to_2025Q1": {
+      "management_tone_shift": 0,
+      "qa_tone_shift": 0.0769230769230769
+    },
+    "2025Q1_to_2025Q2": {
+      "management_tone_shift": 0,
+      "qa_tone_shift": 0.123076923076923
+    }
+  }
+}
