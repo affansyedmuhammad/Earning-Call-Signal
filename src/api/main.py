@@ -4,7 +4,7 @@ from typing import Dict, Any, List
 
 from transcript.transcript_client import fetch_and_save_last_n_transcripts
 from transcript.transcript_loader import load_json_transcripts
-from analysis.signal_extractor import extract_nlp_signals
+from analysis.signal_extractor import extract_all_signals
 from analysis.llm_signal_extractor import extract_together_signals
 
 app = FastAPI(
@@ -41,27 +41,27 @@ async def get_transcripts(ticker: str):
 @app.get("/signals/{ticker}", response_model=Dict[str, Any])
 async def get_signals(ticker: str):
     """
-    Returns NLP-based sentiment signals for each quarter of `ticker`.
-    Output format:
+    Returns section-level sentiment, strategic focuses, and quarter-over-quarter tone shifts for given ticker.
     {
-      "2025Q2": {
-        "management_sentiment": {positive_avg, neutral_avg, negative_avg},
-        "qa_sentiment":         {positive_avg, neutral_avg, negative_avg}
+      "signals": { 
+        <quarter>: {
+          "management_sentiment": {...},
+          "qa_sentiment": {...},
+          "strategic_focuses": ["focus1", "focus2", ...]
+        }, 
+        ... 
       },
-      ...
+      "qoq_tone_change": { <prev_to_cur>: {...deltas...}, ... }
     }
     """
-    # Load your pre-processed JSON transcripts
+    # Load structured transcripts JSON
     transcripts = load_json_transcripts(ticker.upper())
     if not transcripts:
         raise HTTPException(status_code=404, detail="No transcripts found for ticker")
 
-    # Extract per-section sentiment signals
-    signals = {}
-    for quarter, transcript in transcripts.items():
-        signals[quarter] = extract_nlp_signals(transcript)
-
-    return signals
+    # Extract NLP signals and QoQ changes
+    result = extract_all_signals(transcripts)
+    return result
 
 @app.get("/signals_llm/{ticker}", response_model=Dict[str, Any])
 async def get_together_signals(ticker: str):
