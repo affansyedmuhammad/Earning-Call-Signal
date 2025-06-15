@@ -2,14 +2,14 @@
   "signals": {
     "2024Q3": {
       "management_sentiment": {
-        "positive_avg": 0.999699473381043,
-        "neutral_avg": 0.999844312667847,
+        "positive_avg": 0.5,
+        "neutral_avg": 0.5,
         "negative_avg": 0
       },
       "qa_sentiment": {
-        "positive_avg": 0.985648182305423,
-        "neutral_avg": 0.907445933137621,
-        "negative_avg": 0.998525679111481
+        "positive_avg": 0.578947368421053,
+        "neutral_avg": 0.368421052631579,
+        "negative_avg": 0.0526315789473684
       },
       "strategic_focuses": [
         "Data Center Growth",
@@ -21,14 +21,14 @@
     },
     "2024Q4": {
       "management_sentiment": {
-        "positive_avg": 0.999703347682953,
-        "neutral_avg": 0.99983537197113,
+        "positive_avg": 0.5,
+        "neutral_avg": 0.5,
         "negative_avg": 0
       },
       "qa_sentiment": {
-        "positive_avg": 0.98991185426712,
-        "neutral_avg": 0.954420348008474,
-        "negative_avg": 0.995149791240692
+        "positive_avg": 0.5,
+        "neutral_avg": 0.409090909090909,
+        "negative_avg": 0.0909090909090909
       },
       "strategic_focuses": [
         "Data Center Growth",
@@ -40,33 +40,33 @@
     },
     "2025Q1": {
       "management_sentiment": {
-        "positive_avg": 0.999576598405838,
-        "neutral_avg": 0.999835669994354,
+        "positive_avg": 0.5,
+        "neutral_avg": 0.5,
         "negative_avg": 0
       },
       "qa_sentiment": {
-        "positive_avg": 0.96177595059077,
-        "neutral_avg": 0.92849646915089,
+        "positive_avg": 0.576923076923077,
+        "neutral_avg": 0.423076923076923,
         "negative_avg": 0
       },
       "strategic_focuses": [
         "Data Center",
-        "Ethernet",
+        "AI Factories",
         "Sovereign AI",
-        "Enterprise AI",
-        "Diversification"
+        "Automotive",
+        "Omniverse"
       ]
     },
     "2025Q2": {
       "management_sentiment": {
-        "positive_avg": 0.999705970287323,
-        "neutral_avg": 0.999844312667847,
+        "positive_avg": 0.5,
+        "neutral_avg": 0.5,
         "negative_avg": 0
       },
       "qa_sentiment": {
-        "positive_avg": 0.96775638631412,
-        "neutral_avg": 0.999604856967926,
-        "negative_avg": 0.816037833690643
+        "positive_avg": 0.7,
+        "neutral_avg": 0.25,
+        "negative_avg": 0.05
       },
       "strategic_focuses": [
         "Data Center",
@@ -79,16 +79,16 @@
   },
   "qoq_tone_change": {
     "2024Q3_to_2024Q4": {
-      "management_tone_shift": 0.0000038743019104,
-      "qa_tone_shift": 0.00426367196169764
+      "management_tone_shift": 0,
+      "qa_tone_shift": -0.0789473684210527
     },
     "2024Q4_to_2025Q1": {
-      "management_tone_shift": -0.000126749277114868,
-      "qa_tone_shift": -0.0281359036763509
+      "management_tone_shift": 0,
+      "qa_tone_shift": 0.0769230769230769
     },
     "2025Q1_to_2025Q2": {
-      "management_tone_shift": 0.000129371881484985,
-      "qa_tone_shift": 0.00598043572335016
+      "management_tone_shift": 0,
+      "qa_tone_shift": 0.123076923076923
     }
   }
 }

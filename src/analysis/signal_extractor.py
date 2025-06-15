@@ -33,14 +33,30 @@ def section_sentiment(entries: List[Dict[str, str]]) -> Dict[str, float]:
         return {"positive_avg": 0.0, "neutral_avg": 0.0, "negative_avg": 0.0}
 
     results = sentiment_analyzer(texts, truncation=True)
-    pos = [r["score"] for r in results if r["label"].lower() == "positive"]
-    neu = [r["score"] for r in results if r["label"].lower() == "neutral"]
-    neg = [r["score"] for r in results if r["label"].lower() == "negative"]
+    print(results)
+
+    pos_count = neg_count = neu_count = 0
+    for result in results:
+      if float(result["score"]) > 0.5:
+        label = result["label"].lower()
+        if label == "positive":
+            pos_count += 1
+        elif label == "neutral":
+            neu_count += 1
+        elif label == "negative":
+            neg_count += 1
+    total = pos_count + neg_count + neu_count
+    if total == 0:
+      pos_ratio = neg_ratio = neu_ratio = 0.0
+    else:
+      pos_ratio = pos_count / total
+      neg_ratio = neg_count / total
+      neu_ratio = neu_count / total
 
     return {
-        "positive_avg": sum(pos) / len(pos) if pos else 0.0,
-        "neutral_avg":  sum(neu) / len(neu) if neu else 0.0,
-        "negative_avg": sum(neg) / len(neg) if neg else 0.0,
+        "positive_avg": pos_ratio if pos_ratio else 0.0,
+        "neutral_avg":  neu_ratio if neu_ratio else 0.0,
+        "negative_avg": neg_ratio if neg_ratio else 0.0,
     }
 
 
