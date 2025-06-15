@@ -1,8 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from pathlib import Path
+from typing import Dict, Any, List
 
 from transcript.transcript_client import fetch_and_save_last_n_transcripts
 from transcript.transcript_loader import load_json_transcripts
+from analysis.signal_extractor import extract_nlp_signals
+from analysis.llm_signal_extractor import extract_llm_signals
 
 app = FastAPI(
     title="Earnings Call Analyzer",
@@ -33,6 +36,44 @@ async def get_transcripts(ticker: str):
     if not data:
         raise HTTPException(404, "No transcripts found")
     return data
+
+
+@app.get("/signals/{ticker}", response_model=Dict[str, Any])
+async def get_signals(ticker: str):
+    """
+    Returns NLP-based sentiment signals for each quarter of `ticker`.
+    Output format:
+    {
+      "2025Q2": {
+        "management_sentiment": {positive_avg, neutral_avg, negative_avg},
+        "qa_sentiment":         {positive_avg, neutral_avg, negative_avg}
+      },
+      ...
+    }
+    """
+    # Load your pre-processed JSON transcripts
+    transcripts = load_json_transcripts(ticker.upper())
+    if not transcripts:
+        raise HTTPException(status_code=404, detail="No transcripts found for ticker")
+
+    # Extract per-section sentiment signals
+    signals = {}
+    for quarter, transcript in transcripts.items():
+        signals[quarter] = extract_nlp_signals(transcript)
+
+    return signals
+
+@app.get("/signals_llm/{ticker}", response_model=Dict[str, Any])
+async def get_llm_signals(ticker: str):
+    transcripts = load_json_transcripts(ticker.upper())
+    if not transcripts:
+        raise HTTPException(404, "No transcripts found")
+
+    out = {}
+    for q, tr in transcripts.items():
+        out[q] = extract_llm_signals(tr)
+    return out
+
 
 
 # @app.get("/sentiment/{ticker}", summary="Analyze transcript sentiments")
