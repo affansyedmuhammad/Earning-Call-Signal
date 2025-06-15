@@ -1,9 +1,13 @@
 # src/analysis/section_sentiment.py
-
+import os
+import json
+import re
 from typing import Dict, Any, List
 from transformers import pipeline
 from .strategic_focus import extract_strategic_focuses
 
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
+os.makedirs(DATA_DIR, exist_ok=True)
 # 1. Initialize the sentiment‐analysis pipeline
 #    Uses a financial‐tuned model that returns Positive/Neutral/Negative
 SENTIMENT_MODEL = "mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis"
@@ -119,7 +123,7 @@ def compute_qoq_tone(signals: Dict[str, Any]) -> Dict[str, Any]:
     return qoq
 
 
-def extract_all_signals(transcripts: Dict[str, Any]) -> Dict[str, Any]:
+def extract_all_signals(ticker:str, transcripts: Dict[str, Any]) -> Dict[str, Any]:
     """
     Given a dict of transcripts per quarter:
       { "2024Q3": {...}, "2024Q4": {...}, ... }
@@ -144,6 +148,15 @@ def extract_all_signals(transcripts: Dict[str, Any]) -> Dict[str, Any]:
         signals[quarter] = extract_nlp_signals(transcript)
 
     qoq_changes = compute_qoq_tone(signals)
+    filename = f"analysis_{ticker}.txt"
+    filepath = os.path.join(DATA_DIR, filename)
+    result = {
+        "signals": signals,
+        "qoq_tone_change": qoq_changes
+    }
+    result = json.dumps(result, ensure_ascii=False)
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(result)
     return {
         "signals": signals,
         "qoq_tone_change": qoq_changes

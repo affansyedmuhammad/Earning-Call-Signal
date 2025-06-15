@@ -1,6 +1,10 @@
 from fastapi import FastAPI, HTTPException
 from pathlib import Path
 from typing import Dict, Any, List
+import os
+import glob
+import json
+
 
 from transcript.transcript_client import fetch_and_save_last_n_transcripts
 from transcript.transcript_loader import load_json_transcripts
@@ -12,6 +16,7 @@ app = FastAPI(
     description="Fetch & analyze NVIDIA earnings call transcripts",
     version="0.1.0"
 )
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
 
 @app.get("/")
 async def read_root():
@@ -60,7 +65,18 @@ async def get_signals(ticker: str):
         raise HTTPException(status_code=404, detail="No transcripts found for ticker")
 
     # Extract NLP signals and QoQ changes
-    result = extract_all_signals(transcripts)
+    result = extract_all_signals(ticker.upper(), transcripts)
+    return result
+
+
+@app.get("/analysis/{ticker}", response_model=dict)
+async def get_analysis(ticker: str):
+    pattern = os.path.join(DATA_DIR, f"analysis_{ticker.upper()}.txt")
+    result: Dict[str, Any] = {}
+    for path in sorted(glob.glob(pattern), reverse=True):
+        filename = os.path.basename(path)
+        with open(path, "r", encoding="utf-8") as f:
+            result = json.load(f)
     return result
 
 @app.get("/signals_llm/{ticker}", response_model=Dict[str, Any])
@@ -76,3 +92,13 @@ async def get_together_signals(ticker: str):
     for quarter, tr in transcripts.items():
         out[quarter] = extract_together_signals(tr)
     return out
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "main:app",
+        host="127.0.0.1",
+        port=8000,
+        reload=True,
+        app_dir="src/api"
+    )
