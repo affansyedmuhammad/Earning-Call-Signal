@@ -1,66 +1,61 @@
-# src/analysis/llm_section_sentiment.py
-
 from typing import Dict, List, Any
 from collections import Counter
-from transformers import pipeline
+import os
+from together import Together
 
-# 1. Initialize the LLM pipeline
-LLM_MODEL = "google/flan-t5-small"
-llm = pipeline(
-    "text2text-generation",
-    model=LLM_MODEL,
-    tokenizer=LLM_MODEL,
-    device=-1
-)
+# Initialize the Together client
+client = Together(api_key=os.getenv("TOGETHER_API_KEY"))
 
-def classify_text(text: str) -> str:
+# 1. Classify a single text block using Together.ai
+def classify_text_together(text: str) -> str:
     """
-    Asks the LLM to classify a single text chunk.
-    Returns one of 'Positive', 'Neutral', 'Negative'.
+    Uses Together.ai to classify `text` as Positive, Neutral, or Negative.
     """
+    excerpt = text
     prompt = (
-        "Classify the sentiment of the following text "
-        "as Positive, Neutral, or Negative:\n\n"
-        f"\"{text}\"\n\nSentiment:"
+        "Classify the sentiment of this text as Positive, Neutral, or Negative:\n\n"
+        f"\"{excerpt}\"\n\nSentiment:"
     )
-    out = llm(prompt, max_new_tokens=5, do_sample=False)[0]["generated_text"].strip()
+    resp = client.chat.completions.create(
+        model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    out = resp.choices[0].message.content.strip()
     label = out.split()[0].capitalize()
     return label if label in {"Positive", "Neutral", "Negative"} else "Neutral"
 
-def section_sentiment_llm(entries: List[Dict[str, str]]) -> Dict[str, Any]:
+# 2. Optional per-chunk classification (not used here)
+def section_sentiment_together(entries: List[Dict[str, str]]) -> Dict[str, Any]:
     """
-    Given a list of {"speaker":..., "text":...} entries, runs the LLM on each,
-    stores all labels, then returns the majority label.
+    Classifies each chunk individually and returns all labels and majority.
+    (Kept for backwards compatibility.)
     """
-    # Filter out entries where speaker is "Operator"
-    filtered_entries = [e for e in entries if e.get("speaker", "").lower() != "operator"]
-    
-    # Extract just the text field from each filtered entry
-    texts = [e["text"] for e in filtered_entries]
-    # texts = [e["text"] for e in entries]
-    if not texts:
-        return {"labels": [], "majority": None}
+    filtered = [e for e in entries if e.get("speaker", "").lower() != "operator"]
+    labels = []
+    for entry in filtered:
+        labels.append(classify_text_together(entry["text"]))
+    majority = Counter(labels).most_common(1)[0][0] if labels else None
+    return {"labels": labels, "majority": majority}
 
-    # 2. Classify each chunk
-    labels = [classify_text(t) for t in texts]
+# 3. New: collect full section text and classify in two API calls
+def extract_together_signals(transcript: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Concatenates all Prepared Remarks and Q&A into two strings,
+    excludes any Operator entries, then makes exactly two LLM calls
+    to classify overall sentiment.
+    """
+    # Filter out Operator entries
+    prepared_entries = [e for e in transcript.get("preparedRemarks", []) if e.get("speaker", "").lower() != "operator"]
+    qanda_entries   = [e for e in transcript.get("qanda", [])         if e.get("speaker", "").lower() != "operator"]
 
-    # 3. Count and pick the majority
-    counts = Counter(labels)
-    majority, _ = counts.most_common(1)[0]
+    # Concatenate texts for each section
+    management_text = "\n".join(e["text"] for e in prepared_entries)
+    qa_text         = "\n".join(e["text"] for e in qanda_entries)
 
+    # Single API call per section
+    management_sentiment = classify_text_together(management_text)
+    qa_sentiment         = classify_text_together(qa_text)
     return {
-        "labels": labels,
-        "majority": majority
-    }
-
-def extract_llm_signals(transcript: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Runs section_sentiment_llm on both Prepared Remarks and Q&A.
-    Returns the majority sentiment for each.
-    """
-    mgmt = section_sentiment_llm(transcript.get("preparedRemarks", []))
-    qa   = section_sentiment_llm(transcript.get("qanda", []))
-    return {
-        "management_sentiment": mgmt,
-        "qa_sentiment": qa
+        "management_sentiment": management_sentiment,
+        "qa_sentiment": qa_sentiment
     }
